@@ -5,16 +5,27 @@ var fs    = require('fs')             // filesystem ops
   , wisp  = require('wisp/compiler'); // lispy language
 
 
+var Module = require('module');
+
+
 var SessionLauncher = function () {
   
-  this.data    = redis.createClient(process.env.REDIS, '127.0.0.1', {});
-  this.bus     = redis.createClient(process.env.REDIS, '127.0.0.1', {});
-  this.path    = process.env.SESSION;
-  this.context = { exports: {}
-                 , globals: { process: process
-                            , console: console
-                            , require: require
-                            , data:    this.data } };
+  this.data = redis.createClient(process.env.REDIS, '127.0.0.1', {});
+  this.bus  = redis.createClient(process.env.REDIS, '127.0.0.1', {});
+
+  this.path = process.env.SESSION;
+  var mod   = this.module = new Module(this.path);
+
+  this.context =
+    { module:     mod
+    , exports:    mod.exports
+    , __filename: this.path
+    , __dirname:  path.dirname(this.path)
+    , require:    function (spec) { return mod.require(spec) }
+    , console:    console
+    , globals:    { process: process
+                  , data:    this.data } };
+
   this.sandbox = vm.createContext(this.context);
 
   this.bus.subscribe('updated');
@@ -27,20 +38,9 @@ var SessionLauncher = function () {
         if (err) throw err;
         if (!sessionCode) return;
 
-        // compile session context
-        var compiled = wisp.compile(
-          fs.readFileSync(
-            path.join(__dirname, 'core.wisp'),
-            { encoding: 'utf8' }));
-
-        // evaluate session context
-        vm.runInContext(
-          compiled.code,
-          this.sandbox,
-          '<session-context>');
-
         // evaluate your actual session code
-        vm.runInContext(sessionCode, this.sandbox, '<session>');
+        var m = vm.createScript(sessionCode, this.path);
+        m.runInNewContext(this.context)
 
         // let the world know we're running
         this.data.publish('session', 'start');

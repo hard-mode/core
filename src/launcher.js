@@ -72,8 +72,8 @@ var Launcher = module.exports = function (srcPath) {
 
 
 Launcher.prototype.tasks =
-  { watcher: path.resolve('./src/watcher.js')
-  , session: path.resolve('./src/session.js') };
+  { watcher: path.resolve(path.join(__dirname, 'watcher.js'))
+  , session: path.resolve(path.join(__dirname, 'session.js')) };
 
 
 Launcher.prototype.loadSession = function () {
@@ -90,8 +90,8 @@ Launcher.prototype.reloadTask = function (taskName) {
 
 
 Launcher.prototype.onMonitor = function (time, args) {
-  if (args[0] === 'publish')   console.log("PUBLISH ::", args.slice(1));
-  if (args[0] === 'subscribe') console.log("SUBSCRIBE ::", args.slice(1));
+  //if (args[0] === 'publish')   console.log("PUBLISH ::", args.slice(1));
+  //if (args[0] === 'subscribe') console.log("SUBSCRIBE ::", args.slice(1));
 };
 
 

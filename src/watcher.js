@@ -60,7 +60,9 @@ Watcher.prototype.onMessage = {
     var s = this.modules['session'] =
       { dir:  path.dirname(message)
       , file: message };
-    s.glob = path.join(s.dir, '**', '*');
+    //s.glob = path.join(s.dir, '**', '*');
+    s.glob = path.join(s.dir, '*.wisp');
+    console.log(s.glob);
     this.gaze.add(s.glob);
 
     this.compileSession();
