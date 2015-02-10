@@ -30,6 +30,13 @@ var Watcher = module.exports = function () {
   var data = this.data = redis.createClient(process.env.REDIS, '127.0.0.1', {});
   var bus  = this.bus  = redis.createClient(process.env.REDIS, '127.0.0.1', {});
 
+  // file type handlers
+  this.handlers =
+    { '.js':   this.compileScripts
+    , '.jade': this.compileScripts
+    , '.styl': this.compileStyles
+    , '.wisp': this.compileSession };
+
   // modules used in session
   this.modules = {};
 
@@ -113,16 +120,10 @@ Watcher.prototype.onWatcherEvent = function (event, filepath) {
 
 
 Watcher.prototype.compileFile = function (filepath) {
-  if (endsWith(filepath, '.js') || endsWith(filepath, '.jade')) {
-    this.compileScripts();
-    this.data.publish('reload', 'all');
-  } else if (endsWith(filepath, '.styl')) {
-    this.compileStyles();
-  } else if (endsWith(filepath, '.wisp')) {
-    this.compileSession();
-    this.data.publish('reload', 'all');
-  }
-}
+
+  this.handlers[path.extname(filepath)].bind(this)(filepath);
+
+};
 
 
 Watcher.prototype.compileStyles = function () {
