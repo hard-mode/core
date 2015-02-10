@@ -17,9 +17,14 @@
     "gaze": "^0.6.4",
     "glob": "^4.3.5",
     "jade": "^1.9.2",
+    "jadeify": "^4.0.1",
     "long-stack-traces": "^0.1.2",
+    "mori": "^0.3.2",
+    "redis": "^0.12.1",
     "sandboxed-module": "^2.0.0",
     "stylus": "^0.50.0",
-    "wisp": "^0.10.0"
+    "through": "^2.3.6",
+    "wisp": "^0.10.0",
+    "wispify": "^0.2.0"
   }
 }

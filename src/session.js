@@ -23,16 +23,15 @@ var SessionLauncher = function () {
     , __dirname:  path.dirname(this.path)
     , require:    function (spec) { return mod.require(spec) }
     , console:    console
+    , process:    { env: process.env }
     , globals:    { process: process
                   , data:    this.data } };
 
   this.sandbox = vm.createContext(this.context);
 
   this.bus.subscribe('updated');
-  this.bus.subscribe('session-open');
-
   this.bus.on('message', function (channel, message) {
-    if (message === 'session') {
+    if (channel === 'updated' && message === 'session') {
       this.data.get('session', function (err, sessionCode) {
 
         if (err) throw err;

@@ -43,6 +43,7 @@ var Watcher = module.exports = function () {
 
   // listen for messages over redis
   this.bus.subscribe('using');
+  this.bus.subscribe('watch');
   this.bus.subscribe('session-open');
   this.bus.on('message', function (channel, message) {
     if (this.onMessage[channel]) {
@@ -66,6 +67,15 @@ Watcher.prototype.onMessage = {
     this.gaze.add(s.glob);
 
     this.compileSession();
+  },
+
+  'watch': function (pattern) {
+    console.log("Watching", pattern);
+    var files = glob.sync(pattern).map(function (filename) {
+      console.log("-", filename);
+      this.compileFile(filename);
+    }.bind(this));
+    this.gaze.add(pattern);
   },
 
   'using': function (message) {
@@ -96,7 +106,13 @@ Watcher.prototype.onWatcherEvent = function (event, filepath) {
     this.data.publish('reload', 'all');
     return;
   } else {
+    this.compileFile(filename);
+  }
 
+};
+
+
+Watcher.prototype.compileFile = function (filepath) {
   if (endsWith(filepath, '.js') || endsWith(filepath, '.jade')) {
     this.compileScripts();
     this.data.publish('reload', 'all');
@@ -106,10 +122,7 @@ Watcher.prototype.onWatcherEvent = function (event, filepath) {
     this.compileSession();
     this.data.publish('reload', 'all');
   }
-
-  }
-
-};
+}
 
 
 Watcher.prototype.compileStyles = function () {
@@ -120,7 +133,7 @@ Watcher.prototype.compileStyles = function () {
 
   var styl = stylus('');
   styl.set('filename', 'style.css');
-  styl.import('modules/global');
+  //styl.import('modules/global');
 
   for (var i in this.modules) {
     var d = this.modules[i].dir

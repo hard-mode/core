@@ -45,8 +45,9 @@ var Launcher = module.exports = function (srcPath) {
     var env =
       { REDIS:     port
       , SESSION:   this.path
-      , NODE_PATH: path.join(path.dirname(this.path), 'node_modules') +
-                   ':' + process.env['NODE_PATH']};
+      , NODE_PATH: path.join(path.dirname(this.path), 'node_modules') + ':' +
+                   path.join(__dirname, '..', 'node_modules')         + ':' +
+                   process.env['NODE_PATH']};
     Object.keys(this.tasks).map(function (taskName) {
       var task =
         { path:    this.tasks[taskName]
