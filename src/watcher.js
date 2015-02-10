@@ -182,7 +182,7 @@ Watcher.prototype.compileScripts = function () {
   }.bind(this));
 
   // transform, bundle, and store in redis
-  br.transform('wispify')
+  br.transform(require('wispify'))
     .transform(require('jadeify'), { compiler: DynamicMixinsCompiler })
     .transform(require('./transform_jade.js'))
     //.transform({ global: true }, 'uglifyify' )
