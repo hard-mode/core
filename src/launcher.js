@@ -42,7 +42,11 @@ var Launcher = module.exports = function (srcPath) {
     data.del('session');
 
     // start tasks
-    var env = { REDIS: port, SESSION: this.path };
+    var env =
+      { REDIS:     port
+      , SESSION:   this.path
+      , NODE_PATH: path.join(path.dirname(this.path), 'node_modules') +
+                   ':' + process.env['NODE_PATH']};
     Object.keys(this.tasks).map(function (taskName) {
       var task =
         { path:    this.tasks[taskName]
