@@ -1,14 +1,13 @@
-var forever  = require('forever-monitor') // runs eternally
-  , freeport = require('freeport')        // get free ports
-  , path     = require('path')            // path operation
-  , redis    = require('redis')           // fast datastore
+var forever = require('forever-monitor') // runs eternally
+  , path    = require('path')            // path operation
+  , redis   = require('./redis.js')      // redis launcher
 
 
 // https://github.com/tlrobinson/long-stack-traces
 require('long-stack-traces');
 
 
-var Launcher = module.exports = function (srcPath) {
+var SessionLauncher = module.exports.SessionLauncher = function (srcPath) {
 
   // determine session path
   if (srcPath) {
@@ -19,88 +18,47 @@ var Launcher = module.exports = function (srcPath) {
     console.log('Starting new session.');
   }
 
-  // get a free port for running a redis server
-  freeport(function (err, port) {
-
-    console.log("Starting Redis on port", port);
-
-    var cache = this.cache = {
-      server:  forever.start(
-        ['redis-server', '--port', port],
-        { silent:  true
-        , pidFile: '/home/epimetheus/redis.pid' }) };
-
-    // start redis activity monitor
-    var mon = this.cache.monitor = redis.createClient(port, '127.0.0.1', {});
-    mon.monitor(function (err, res) {
-      if (err) throw err;
-      mon.on('monitor', this.onMonitor.bind(this));
-    }.bind(this));
+  // launch redis on a free port
+  // TODO use pidfiles to reuse redis instance
+  // TODO make sure instances don't pile up
+  redis(function (err, redis) {
 
     // clean up
-    var data = this.cache.data = redis.createClient(port, '127.0.0.1', {});
-    data.del('session');
+    redis.clients.data.del('session');
 
-    // start tasks
-    var env =
-      { REDIS:     port
-      , SESSION:   this.path
-      , NODE_PATH: path.join(path.dirname(this.path), 'node_modules') + ':' +
-                   path.join(__dirname, '..', 'node_modules')         + ':' +
-                   process.env['NODE_PATH']};
-    Object.keys(this.tasks).map(function (taskName) {
-      var task =
-        { path:    this.tasks[taskName]
-        , monitor: new (forever.Monitor)( this.tasks[taskName], { env: env } )};
-      task.monitor.start();
-      this.tasks[taskName] = task;
-    }.bind(this));
+    // start session as separate process
+    var taskPath = path.resolve(path.join(__dirname, 'session.js'));
 
-    // restart tasks on command
-    var bus = this.cache.bus = redis.createClient(port, '127.0.0.1', {});
-    bus.subscribe('reload');
-    bus.on('message', function (channel, message) {
-      if (message === 'all') {
-        Object.keys(this.tasks).map(this.reloadTask.bind(this));
-        this.loadSession();
-      } else if (this.tasks[message]) {
-        this.reloadTask(message);
-      }
-    }.bind(this));
+    var task =
+      { path:    taskPath
+      , monitor: new (forever.Monitor)
+        ( taskPath
+        , { env:
+            { REDIS:     redis.port
+            , SESSION:   this.path
+            , NODE_PATH: path.join(path.dirname(this.path), 'node_modules') + ':' +
+                         path.join(__dirname, '..', 'node_modules')         + ':' +
+                         process.env['NODE_PATH']} } ) };
+    task.monitor.start();
+
+    // restart session when something has been updated
+    redis.clients.bus.subscribe('reload');
+    redis.clients.bus.on('message', function (channel, message) {
+      console.log('---> Reload session');
+      task.monitor.restart();
+    });
 
     // load session
-    this.loadSession();
+    setTimeout(function(){
+      if (this.path) redis.clients.data.publish('session-open', this.path);
+    }.bind(this), 1000);
  
   }.bind(this));
   
 };
 
 
-Launcher.prototype.tasks =
-  { watcher: path.resolve(path.join(__dirname, 'watcher.js'))
-  , session: path.resolve(path.join(__dirname, 'session.js')) };
-
-
-Launcher.prototype.loadSession = function () {
-  setTimeout(function(){
-    if (this.path) this.cache.data.publish('session-open', this.path);
-  }.bind(this), 1000);
-}
-
-
-Launcher.prototype.reloadTask = function (taskName) {
-  console.log('---> Reload', taskName);
-  this.tasks[taskName].monitor.restart();
-}
-
-
-Launcher.prototype.onMonitor = function (time, args) {
-  //if (args[0] === 'publish')   console.log("PUBLISH ::", args.slice(1));
-  //if (args[0] === 'subscribe') console.log("SUBSCRIBE ::", args.slice(1));
-};
-
-
 // entry point
 if (require.main === module) {
-  var app = new Launcher(process.argv[2]);
+  var app = new SessionLauncher(process.argv[2]);
 };
