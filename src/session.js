@@ -14,10 +14,10 @@ var Session = function (options) {
   // and allow launcher to restart it with the new code
   var watcher = new Watcher(options);
   watcher.watch(options.sessionPath);
-  watcher.on('reload', function (filepath) {
-    console.log();
-    process.exit(64);
-  })
+  watcher.on('reload', reload);
+  watcher.on('update', function (filePath) {
+    if (filePath === options.sessionPath) reload();
+  });
 
   // compile session and execude session code
   var compiled = wisp.compile(
@@ -34,7 +34,13 @@ var Session = function (options) {
     , console:    console
     , process:    { env: process.env } } );
 
+  function reload () {
+    console.log();
+    process.exit(64);
+  }
+
 }
+
 
 
 if (require.main === module) {
