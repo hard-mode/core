@@ -14,7 +14,7 @@
     "esprima": "^2.0.0",
     "forever-monitor": "^1.5.2",
     "freeport": "^1.0.4",
-    "gaze": "^0.6.4",
+    "gaze": "^0.5.0",
     "glob": "^4.3.5",
     "jade": "^1.9.2",
     "jadeify": "^4.0.1",
