@@ -1,56 +1,34 @@
-var fs    = require('fs')             // filesystem ops
-  , path  = require('path')           // path operation
-  , redis = require('redis')          // fast datastore
-  , vm    = require('vm')             // eval isolation
-  , wisp  = require('wisp/compiler'); // lispy language
+var fs      = require('fs')             // filesystem ops
+  , path    = require('path')           // path operation
+  , redis   = require('redis')          // fast datastore
+  , vm      = require('vm')             // eval isolation
+  , watcher = require('./watcher')      // watch our code
+  , wisp    = require('wisp/compiler'); // lispy language
 
-
-var Module = require('module');
-
-
-var SessionLauncher = function () {
+var Session = function (options) {
   
-  this.data = redis.createClient(process.env.REDIS, '127.0.0.1', {});
-  this.bus  = redis.createClient(process.env.REDIS, '127.0.0.1', {});
+  var data = redis.createClient(options.redisPort, '127.0.0.1', {});
 
-  this.path = process.env.SESSION;
-  var mod   = this.module = new Module(this.path);
+  data.get('session', function (err, sessionCode) {
 
-  this.context =
-    { module:     mod
-    , exports:    mod.exports
-    , __filename: this.path
-    , __dirname:  path.dirname(this.path)
-    , require:    function (spec) { return mod.require(spec) }
-    , console:    console
-    , process:    { env: process.env }
-    , globals:    { process: process
-                  , data:    this.data } };
+    var script = vm.createScript(sessionCode, options.sessionPath)
+      , module = new (require('module'))(options.sessionPath);
+    script.runInNewContext(
+      { module:     module
+      , exports:    module.exports
+      , __filename: options.sessionPath
+      , __dirname:  path.dirname(options.sessionPath)
+      , require:    function (spec) { return mod.require(spec) }
+      , console:    console
+      , process:    { env: process.env } } );
 
-  this.sandbox = vm.createContext(this.context);
-
-  this.bus.subscribe('updated');
-  this.bus.on('message', function (channel, message) {
-    if (channel === 'updated' && message === 'session') {
-      this.data.get('session', function (err, sessionCode) {
-
-        if (err) throw err;
-        if (!sessionCode) return;
-
-        // evaluate your actual session code
-        var m = vm.createScript(sessionCode, this.path);
-        m.runInNewContext(this.context)
-
-        // let the world know we're running
-        this.data.publish('session', 'start');
-
-      }.bind(this));
-    }
   }.bind(this));
 
 }
 
 
 if (require.main === module) {
-  var app = new SessionLauncher();
+  var app = new Session(
+    { redisPort:   process.env.REDIS
+    , sessionPath: process.env.SESSION });
 }
