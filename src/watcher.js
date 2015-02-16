@@ -1,6 +1,7 @@
 var browserify  = require('browserify')     // bundle scripts
   , esprima     = require('esprima')        // transform jade
   , escodegen   = require('escodegen')      // jade transform
+  , events      = require('events')         // events emitter
   , fs          = require('fs')             // filesystem ops
   , gaze        = require('gaze')           // watching files
   , glob        = require('glob')           // glob for files
@@ -19,16 +20,11 @@ function DynamicMixinsCompiler () {
 util.inherits(DynamicMixinsCompiler, jade.Compiler);
 
 
-var endsWith = function (a, b) {
-  return a.lastIndexOf(b) === (a.length - b.length);
-}
-
-
-var Watcher = module.exports = function () {
+var Watcher = module.exports = function (options) {
 
   // redis connections
-  var data = this.data = redis.createClient(process.env.REDIS, '127.0.0.1', {});
-  var bus  = this.bus  = redis.createClient(process.env.REDIS, '127.0.0.1', {});
+  var data = this.data = redis.createClient(options.redisPort, '127.0.0.1', {});
+  var bus  = this.bus  = redis.createClient(options.redisPort, '127.0.0.1', {});
 
   // file type handlers
   this.handlers =
@@ -41,7 +37,7 @@ var Watcher = module.exports = function () {
 
   // start watcher
   this.gaze = gaze(
-    [ 'src/**/*' ],
+    [ path.join(__dirname, '**', '*') ],
     function (err, watcher) {
       if (err) throw err;
       watcher.on('all', this.onWatcherEvent.bind(this));
@@ -56,6 +52,27 @@ var Watcher = module.exports = function () {
       (this.onMessage[channel].bind(this))(message);
     }
   }.bind(this));
+
+};
+
+
+util.inherits(Watcher, events.EventEmitter);
+
+
+Watcher.prototype.watch = function (pattern) {
+
+  console.log("Watching", pattern);
+
+  var files = glob.sync(pattern);
+
+  if (!(files.length === 1 && files[0] === pattern)) {
+    files.map(function (filename) {
+      console.log("-", filename);
+      this.compileFile(filename);
+    }.bind(this));
+  }
+
+  this.gaze.add(pattern);
 
 };
 
@@ -76,12 +93,7 @@ Watcher.prototype.onMessage = {
   },
 
   'watch': function (pattern) {
-    console.log("Watching", pattern);
-    var files = glob.sync(pattern).map(function (filename) {
-      console.log("-", filename);
-      this.compileFile(filename);
-    }.bind(this));
-    this.gaze.add(pattern);
+    this.watch(pattern);
   },
 
   'using': function (message) {
@@ -104,15 +116,12 @@ Watcher.prototype.onMessage = {
 
 Watcher.prototype.onWatcherEvent = function (event, filepath) {
 
-  this.data.publish('watcher', event + ':' + filepath);
-
-  // editing any file in the core directory
-  // triggers reload of watcher and session
-  if (path.dirname(filepath) === __dirname) {
-    this.data.publish('reload', 'all');
-    return;
+  // any changes to src dir of core module
+  // trigger reload of watcher and session
+  if (path.dirname(filepath).indexOf(__dirname) === 0) {
+    this.emit('reload', filepath);
   } else {
-    this.compileFile(filename);
+    this.emit('update', filepath);
   }
 
 };
@@ -153,5 +162,5 @@ Watcher.prototype.compileSession = function () {
 
 
 if (require.main === module) {
-  var app = new Watcher();
+  var app = new Watcher({ redisPort: process.env.REDIS });
 }
