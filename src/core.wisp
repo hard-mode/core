@@ -9,6 +9,10 @@
             :redis-events (redis.createClient process.env.REDIS "127.0.0.1" {}) ) )
 
 
+(defn assert [condition message]
+  (if (not condition) (throw (Error. message))))
+
+
 (defn execute-body!
   [context-or-member & body]
 
@@ -29,6 +33,7 @@
     ; modified context, or in turn call `execute-body!` themselves
     (loop [context context
            members members]
+      (assert (is-map context) "context is not a map?!")
       (console.log "\n" context)
       (if (first members)
         (recur ((first members) context) (rest members))

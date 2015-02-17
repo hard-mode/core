@@ -11,6 +11,10 @@ var Session = function (options) {
   
   var data = redis.createClient(options.redisPort, '127.0.0.1', {});
 
+  // keep track of files used on the server side
+  // changes to those would trigger full reloads
+  var included = [options.sessionPath];
+
   // run watcher, compiling assets
   // any time the session code changes, end this process
   // and allow launcher to restart it with the new code
@@ -18,7 +22,7 @@ var Session = function (options) {
   watcher.watch(options.sessionPath);
   watcher.on('reload', reload);
   watcher.on('update', function (filePath) {
-    if (filePath === options.sessionPath) reload();
+    if (included.indexOf(filePath) !== -1) reload();
   });
 
   function reload () {
@@ -40,10 +44,21 @@ var Session = function (options) {
 
     // 'this' is bound to the sandboxed module instance
     if (path.extname(this.filename) === '.wisp') {
+
+      watcher.watch(this.filename);
+
+      if (included.indexOf(this.filename) === -1) {
+        included.push(this.filename);
+      }
+
       src += wisp.compile(source).code;
+
     } else { 
+
       src += source;
+
     }
+
     return src;
   }
 
