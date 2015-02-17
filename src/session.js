@@ -1,9 +1,11 @@
-var fs      = require('fs')             // filesystem ops
-  , path    = require('path')           // path operation
-  , redis   = require('redis')          // fast datastore
-  , vm      = require('vm')             // eval isolation
-  , Watcher = require('./watcher')      // watch our code
-  , wisp    = require('wisp/compiler'); // lispy language
+var fs      = require('fs')               // filesystem ops
+  , path    = require('path')             // path operation
+  , redis   = require('redis')            // fast datastore
+  , sandbox = require('sandboxed-module') // module sandbox
+  , vm      = require('vm')               // eval isolation
+  , Watcher = require('./watcher')        // watch our code
+  , wisp    = require('wisp/compiler');   // lispy language
+
 
 var Session = function (options) {
   
@@ -19,32 +21,53 @@ var Session = function (options) {
     if (filePath === options.sessionPath) reload();
   });
 
-  // compile session and execude session code
-  var compiled = wisp.compile(
-    fs.readFileSync(options.sessionPath,
-                    { encoding: 'utf8' }));
-  var script = vm.createScript(compiled.code, options.sessionPath)
-    , module = new (require('module'))(options.sessionPath);
-  script.runInNewContext(
-    { module:     module
-    , exports:    module.exports
-    , __filename: options.sessionPath
-    , __dirname:  path.dirname(options.sessionPath)
-    , require:    function (spec) { return module.require(spec) }
-    , console:    console
-    , process:    { env: process.env } } );
-
   function reload () {
     console.log();
     process.exit(64);
   }
 
-}
+  // execute session in sandbox
+  var session = sandbox.require(
+    options.sessionPath,
+    { sourceTransformers: { wisp: compileWisp } }
+  );
 
+  function compileWisp (source) {
+    // make sandboxed `require` calls aware of `.wisp` files
+    // but don't add require-time compilation like `wisp.engine.node`
+    // leaving it to this very sourceTransformer to handle compilation
+    src = 'require.extensions[".wisp"]=true;';
+
+    // 'this' is bound to the sandboxed module instance
+    if (path.extname(this.filename) === '.wisp') {
+      src += wisp.compile(source).code;
+    } else { 
+      src += source;
+    }
+    return src;
+  }
+
+  // compile session and execute in custom context
+  //var source   = fs.readFileSync(options.sessionPath, { encoding: 'utf8' })
+    //, compiled = wisp.compile(source)
+    //, script   = vm.createScript(compiled.code, options.sessionPath)
+    //, module   = new (require('module'))(options.sessionPath);
+  //script.runInNewContext(
+    //{ module:     module
+    //, exports:    module.exports
+    //, __filename: options.sessionPath
+    //, __dirname:  path.dirname(options.sessionPath)
+    //, require:    function (spec) { return module.require(spec) }
+    //, console:    console
+    //, watcher:    watcher
+    //, process:    { env: process.env } } );
+
+}
 
 
 if (require.main === module) {
   var app = new Session(
     { redisPort:   process.env.REDIS
-    , sessionPath: process.env.SESSION });
+    , sessionPath: process.env.SESSION }
+  );
 }

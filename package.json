@@ -21,6 +21,7 @@
     "long-stack-traces": "^0.1.2",
     "mori": "^0.3.2",
     "redis": "^0.12.1",
+    "require-like": "^0.1.2",
     "sandboxed-module": "^2.0.0",
     "stylus": "^0.50.0",
     "through": "^2.3.6",

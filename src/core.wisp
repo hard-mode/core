@@ -1,17 +1,17 @@
 (ns hardmode-core.src.core
   (:require
     [redis]
-    [mori
-      :refer [list hash-map is-map conj each into]]))
+    [mori :refer [list hash-map is-map conj each into]]))
 
 
 (defn execute-body!
   [context-or-member & body]
-  (let [default-context { :redis-data   (redis.createClient process.env.REDIS "127.0.0.1" {})
-                          :redis-events (redis.createClient process.env.REDIS "127.0.0.1" {}) }
+  (let [default-context (fn [] (hash-map
+                          :redis-data   (redis.createClient process.env.REDIS "127.0.0.1" {})
+                          :redis-events (redis.createClient process.env.REDIS "127.0.0.1" {}) ))
         member-list     (if (> body.length 0) (into (list) body) (list))
         has-context     (is-map context-or-member)
-        context         (if has-context context-or-member default-context)
+        context         (if has-context context-or-member (default-context))
         members         (if has-context
                           member-list
                           (conj member-list context-or-member))]
