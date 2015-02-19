@@ -4,13 +4,23 @@
     [mori :refer [list hash-map is-map conj each into first rest]]))
 
 
-(defn get-default-context []
-  (hash-map :redis-data   (redis.createClient process.env.REDIS "127.0.0.1" {})
-            :redis-events (redis.createClient process.env.REDIS "127.0.0.1" {}) ) )
-
-
 (defn assert [condition message]
   (if (not condition) (throw (Error. message))))
+
+
+;(defn execute-body!
+  ;([body]
+    ;(execute-body! (hash-map) body))
+  ;([context body]
+    ;(console.log "BODY" body (into (list) [body]))
+    ;(loop [context context
+           ;members (if (> body.length 0) (into (list) body) (list))]
+      ;(console.log "MEMBERS" members)
+      ;(assert (is-map context) "context is not a map?!")
+      ;(console.log "\n" context)
+      ;(if (first members)
+        ;(recur ((first members) context) (rest members))
+        ;context))))
 
 
 (defn execute-body!
@@ -23,7 +33,7 @@
         has-context     (is-map context-or-member)
         context         (if has-context
                           context-or-member
-                          (get-default-context))
+                          (hash-map))
         members         (if has-context
                           member-list
                           (conj member-list context-or-member))]

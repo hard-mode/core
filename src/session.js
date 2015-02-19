@@ -45,13 +45,15 @@ var Session = function (options) {
     // 'this' is bound to the sandboxed module instance
     if (path.extname(this.filename) === '.wisp') {
 
-      watcher.watch(this.filename);
-
       if (included.indexOf(this.filename) === -1) {
         included.push(this.filename);
+        watcher.watch(this.filename);
       }
 
-      src += wisp.compile(source).code;
+      var compiled = wisp.compile(source);
+      if (!compiled) throw new Error("Could not compile " + this.filename)
+      src += compiled.code;
+      src += "\n;require('source-map-support').install();";
 
     } else { 
 
