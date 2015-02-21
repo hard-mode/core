@@ -33,14 +33,23 @@ var Session = function (options) {
   // execute session in sandbox
   var session = sandbox.require(
     options.sessionPath,
-    { sourceTransformers: { wisp: compileWisp } }
+    { sourceTransformers: { wisp: compileWisp
+                          , hash: stripHashBang } }
   );
+
+  function stripHashBang (source) {
+    // if the first line of a source file starts with #!,
+    // remove that line so that it doesn't break the vm.
+    return source.replace(/^#!.*/m, '');
+  }
 
   function compileWisp (source) {
     // make sandboxed `require` calls aware of `.wisp` files
     // but don't add require-time compilation like `wisp.engine.node`
     // leaving it to this very sourceTransformer to handle compilation
-    src = 'require.extensions[".wisp"]=true;';
+
+    // the newline allows stripHashBang to work
+    src = 'require.extensions[".wisp"]=true;\n';
 
     // 'this' is bound to the sandboxed module instance
     if (path.extname(this.filename) === '.wisp') {
