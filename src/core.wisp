@@ -1,7 +1,8 @@
 (ns hardmode-core.src.core
   (:require
     [redis]
-    [mori :refer [list hash-map is-map conj each into first rest]]))
+    [wisp.runtime :refer [cons first rest]]
+    [mori :refer [list hash-map is-map conj each into reduce]]))
 
 
 (defn assert [condition message]
@@ -38,13 +39,21 @@
                           member-list
                           (conj member-list context-or-member))]
 
-    ; thread context object through each function of the body
+    ; run context object through each function of the body
     ; members have the choice to either return an optionally
     ; modified context, or in turn call `execute-body!` themselves
+
+    ; lazy way
+    ;(reduce (fn [ctx member]
+      ;(assert (is-map ctx "context is not a hash-map?!"))
+      ;(console.log "\n" ctx)
+      ;(member ctx)) context members)))
+
+    ; non-lazy way
     (loop [context context
            members members]
       (assert (is-map context) "context is not a map?!")
-      (console.log "\n" context)
-      (if (first members)
-        (recur ((first members) context) (rest members))
+      ;(console.log "\n" context)
+      (if (mori.first members)
+        (recur ((mori.first members) context) (mori.rest members))
         context))))
