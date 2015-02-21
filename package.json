@@ -23,6 +23,7 @@
     "redis": "^0.12.1",
     "require-like": "^0.1.2",
     "sandboxed-module": "^2.0.0",
+    "send-data": "^6.0.0",
     "source-map-support": "^0.2.9",
     "stylus": "^0.50.0",
     "through": "^2.3.6",
