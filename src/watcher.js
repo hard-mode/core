@@ -1,23 +1,18 @@
-var browserify  = require('browserify')     // bundle scripts
-  , esprima     = require('esprima')        // transform jade
-  , escodegen   = require('escodegen')      // jade transform
-  , events      = require('events')         // events emitter
+var events      = require('events')         // events emitter
   , fs          = require('fs')             // filesystem ops
   , gaze        = require('gaze')           // watching files
   , glob        = require('glob')           // glob for files
-  , jade        = require('jade')           // html templates
   , path        = require('path')           // path operation
   , redis       = require('redis')          // fast datastore
-  , stylus      = require('stylus')         // css preprocess
   , util        = require('util')           // node utilities
   , wisp        = require('wisp/compiler'); // lispy language
 
 
-function DynamicMixinsCompiler () {
-    jade.Compiler.apply(this, arguments);
-    this.dynamicMixins = true;
-}
-util.inherits(DynamicMixinsCompiler, jade.Compiler);
+//function DynamicMixinsCompiler () {
+    //jade.Compiler.apply(this, arguments);
+    //this.dynamicMixins = true;
+//}
+//util.inherits(DynamicMixinsCompiler, jade.Compiler);
 
 
 var Watcher = module.exports = function (options) {
