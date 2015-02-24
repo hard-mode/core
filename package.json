@@ -27,7 +27,7 @@
     "source-map-support": "^0.2.9",
     "stylus": "^0.50.0",
     "through": "^2.3.6",
-    "wisp": "^0.10.0",
+    "wisp": "git+https://github.com/egasimus/wisp.git",
     "wispify": "^0.2.0"
   }
 }
