@@ -73,21 +73,6 @@ var Session = function (options) {
     return src;
   }
 
-  // compile session and execute in custom context
-  //var source   = fs.readFileSync(options.sessionPath, { encoding: 'utf8' })
-    //, compiled = wisp.compile(source)
-    //, script   = vm.createScript(compiled.code, options.sessionPath)
-    //, module   = new (require('module'))(options.sessionPath);
-  //script.runInNewContext(
-    //{ module:     module
-    //, exports:    module.exports
-    //, __filename: options.sessionPath
-    //, __dirname:  path.dirname(options.sessionPath)
-    //, require:    function (spec) { return module.require(spec) }
-    //, console:    console
-    //, watcher:    watcher
-    //, process:    { env: process.env } } );
-
 }
 
 

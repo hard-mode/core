@@ -8,11 +8,6 @@ var events      = require('events')         // events emitter
   , wisp        = require('wisp/compiler'); // lispy language
 
 
-//function DynamicMixinsCompiler () {
-    //jade.Compiler.apply(this, arguments);
-    //this.dynamicMixins = true;
-//}
-//util.inherits(DynamicMixinsCompiler, jade.Compiler);
 
 
 var Watcher = module.exports = function (options) {
