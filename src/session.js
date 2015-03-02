@@ -1,6 +1,5 @@
 var fs      = require('fs')               // filesystem ops
   , path    = require('path')             // path operation
-  , redis   = require('redis')            // fast datastore
   , sandbox = require('sandboxed-module') // module sandbox
   , vm      = require('vm')               // eval isolation
   , Watcher = require('./watcher')        // watch our code
@@ -9,8 +8,6 @@ var fs      = require('fs')               // filesystem ops
 
 var Session = function (options) {
   
-  var data = redis.createClient(options.redisPort, '127.0.0.1', {});
-
   // keep track of files used on the server side
   // changes to those would trigger full reloads
   var included = [options.sessionPath];
@@ -78,7 +75,6 @@ var Session = function (options) {
 
 if (require.main === module) {
   var app = new Session(
-    { redisPort:   process.env.REDIS
-    , sessionPath: process.env.SESSION }
+    { sessionPath: process.env.SESSION }
   );
 }

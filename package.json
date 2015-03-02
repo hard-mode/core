@@ -15,7 +15,6 @@
     "glob": "^4.3.5",
     "long-stack-traces": "^0.1.2",
     "mori": "^0.3.2",
-    "redis": "^0.12.1",
     "require-like": "^0.1.2",
     "sandboxed-module": "^2.0.0",
     "source-map-support": "^0.2.9",

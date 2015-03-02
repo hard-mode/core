@@ -3,18 +3,11 @@ var events      = require('events')         // events emitter
   , gaze        = require('gaze')           // watching files
   , glob        = require('glob')           // glob for files
   , path        = require('path')           // path operation
-  , redis       = require('redis')          // fast datastore
   , util        = require('util')           // node utilities
   , wisp        = require('wisp/compiler'); // lispy language
 
 
-
-
 var Watcher = module.exports = function (options) {
-
-  // redis connections
-  var data = this.data = redis.createClient(options.redisPort, '127.0.0.1', {});
-  var bus  = this.bus  = redis.createClient(options.redisPort, '127.0.0.1', {});
 
   // file type handlers
   this.handlers =
@@ -32,16 +25,6 @@ var Watcher = module.exports = function (options) {
       if (err) throw err;
       watcher.on('all', this.onWatcherEvent.bind(this));
     }.bind(this));
-
-  // listen for messages over redis
-  this.bus.subscribe('using');
-  this.bus.subscribe('watch');
-  this.bus.subscribe('session-open');
-  this.bus.on('message', function (channel, message) {
-    if (this.onMessage[channel]) {
-      (this.onMessage[channel].bind(this))(message);
-    }
-  }.bind(this));
 
 };
 
@@ -143,8 +126,6 @@ Watcher.prototype.compileSession = function () {
     function (err, source) {
       if (err) throw err;
       var compiled = wisp.compile(source);
-      this.data.set('session', compiled.code);
-      this.data.publish('updated', 'session');
     }.bind(this)
   );
 

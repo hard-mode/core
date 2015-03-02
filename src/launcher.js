@@ -16,30 +16,19 @@ var Launcher = module.exports.Launcher = function (srcPath) {
     console.log('Starting new session.');
   }
 
-  // launch redis on a free port
-  // TODO use pidfiles to reuse redis instance
-  // TODO make sure instances don't pile up
-  require('./redis')(function (err, redis) {
-
-    // clean up
-    redis.clients.data.del('session');
-
-    // start session as separate process
-    var taskPath = path.resolve(path.join(__dirname, 'session.js'))
-      , task =
-        { path:    taskPath
-        , monitor: new (require('forever-monitor').Monitor)
-          ( taskPath
-          , { watch: false
-            , env:
-              { REDIS:     redis.port
-              , SESSION:   this.path
-              , NODE_PATH: path.join(path.dirname(this.path), 'node_modules') + ':' +
-                           path.join(__dirname, '..', 'node_modules')         + ':' +
-                           process.env['NODE_PATH'] } } ) };
-    task.monitor.start();
- 
-  }.bind(this));
+  // start session as separate process
+  var taskPath = path.resolve(path.join(__dirname, 'session.js'))
+    , task =
+      { path:    taskPath
+      , monitor: new (require('forever-monitor').Monitor)
+        ( taskPath
+        , { watch: false
+          , env:
+            { SESSION:   this.path
+            , NODE_PATH: path.join(path.dirname(this.path), 'node_modules') + ':' +
+                         path.join(__dirname, '..', 'node_modules')         + ':' +
+                         process.env['NODE_PATH'] } } ) };
+  task.monitor.start();
   
 };
 
