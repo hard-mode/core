@@ -1,4 +1,4 @@
-(ns hardmode-core.src.core
+(ns hardmode-core.util
   (:require
     [wisp.runtime :refer [cons first rest]]
     [mori :refer [list hash-map is-map conj each into reduce]]))

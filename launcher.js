@@ -26,7 +26,7 @@ var Launcher = module.exports.Launcher = function (srcPath) {
           , env:
             { SESSION:   this.path
             , NODE_PATH: path.join(path.dirname(this.path), 'node_modules') + ':' +
-                         path.join(__dirname, '..', 'node_modules')         + ':' +
+                         path.join(__dirname, 'node_modules')               + ':' +
                          process.env['NODE_PATH'] } } ) };
   task.monitor.start();
   

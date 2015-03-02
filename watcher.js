@@ -50,43 +50,6 @@ Watcher.prototype.watch = function (pattern) {
 };
 
 
-Watcher.prototype.onMessage = {
-
-  'session-open': function (message) {
-    console.log("OPEN", message);
-    var s = this.modules['session'] =
-      { dir:  path.dirname(message)
-      , file: message };
-    //s.glob = path.join(s.dir, '**', '*');
-    s.glob = path.join(s.dir, '*.wisp');
-    console.log(s.glob);
-    this.gaze.add(s.glob);
-
-    this.compileSession();
-  },
-
-  'watch': function (pattern) {
-    this.watch(pattern);
-  },
-
-  'using': function (message) {
-    var modules = message.split(',');
-    for (var i in modules) {
-      var module = modules[i]
-        , dir    = path.resolve(path.join('modules', module));
-      this.modules[module] =
-        { dir:  dir
-        , glob: path.join(dir, '**', '*') }
-      this.gaze.add(this.modules[module].glob);
-    }
-
-    this.compileScripts();
-    this.compileStyles();
-  }
-
-};
-
-
 Watcher.prototype.onWatcherEvent = function (event, filepath) {
 
   // any changes to src dir of core module
