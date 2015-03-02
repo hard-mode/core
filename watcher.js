@@ -36,16 +36,20 @@ Watcher.prototype.watch = function (pattern) {
 
   console.log("Watching", pattern);
 
-  var files = glob.sync(pattern);
+  process.nextTick(function () {
 
-  if (!(files.length === 1 && files[0] === pattern)) {
-    files.map(function (filename) {
-      console.log("-", filename);
-      this.compileFile(filename);
-    }.bind(this));
-  }
+    var files = glob.sync(pattern);
 
-  this.gaze.add(pattern);
+    if (!(files.length === 1 && files[0] === pattern)) {
+      files.map(function (filename) {
+        console.log("-", filename);
+        this.compileFile(filename);
+      }.bind(this));
+    }
+
+    this.gaze.add(pattern);
+
+  }.bind(this));
 
 };
 
