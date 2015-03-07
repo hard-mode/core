@@ -32,24 +32,20 @@ Watcher.prototype.watch = function (pattern) {
 
   console.log("◉", pattern);
 
-  process.nextTick(function () {
+  glob(pattern, function (err, files) {
 
-    glob(pattern, function (err, files) {
+    if (err) throw err;
 
-      if (err) throw err;
+    if (!(files.length === 1 && files[0] === pattern)) {
+      files.map(function (filename) {
+        console.log("-", filename);
+        this.compileFile(filename);
+      }.bind(this));
+    }
 
-      if (!(files.length === 1 && files[0] === pattern)) {
-        files.map(function (filename) {
-          console.log("-", filename);
-          this.compileFile(filename);
-        }.bind(this));
-      }
+  });
 
-    });
-
-    this.watcher.add(pattern);
-
-  }.bind(this));
+  this.watcher.add(pattern);
 
 };
 
