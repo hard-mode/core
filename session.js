@@ -1,4 +1,6 @@
-var fs      = require('fs')               // filesystem ops
+var caches  = require('cache-manager')    // caching engine
+  , deasync = require('deasync')          // async wrappers
+  , fs      = require('fs')               // filesystem ops
   , path    = require('path')             // path operation
   , sandbox = require('sandboxed-module') // module sandbox
   , vm      = require('vm')               // eval isolation
@@ -27,6 +29,10 @@ var Session = function (options) {
     process.exit(64);
   }
 
+  // start cache
+  var cache = caches.caching({store: 'memory', max: 100, ttl: 100});
+  var get   = deasync(cache.get);
+
   // execute session in sandbox
   var session = sandbox.require(
     options.sessionPath,
@@ -51,15 +57,31 @@ var Session = function (options) {
     // 'this' is bound to the sandboxed module instance
     if (path.extname(this.filename) === '.wisp') {
 
+      // compute hash value for file contents
+      var hash = require('string-hash')(source)
+        , key  = "wisp:" + hash + ":" + source.length;
+
+      // try to get cached compiler output
+      var cached = get.call(cache, key);
+      if (cached) {
+        src += cached.item;
+      } else {
+        // compile and store in cache
+        var compiled = wisp.compile(source);
+        if (!compiled) throw new Error("Could not compile " + this.filename)
+        src += compiled.code;
+        cache.set(key, compiled.code, 1000000, function (err) {
+          if (err) console.log("CACHERR", err);
+        });
+      }
+
+      src += "\n;require('source-map-support').install();";
+
+      // watch this file and keep track of its inclusion
       if (included.indexOf(this.filename) === -1) {
         included.push(this.filename);
         watcher.watch(this.filename);
       }
-
-      var compiled = wisp.compile(source);
-      if (!compiled) throw new Error("Could not compile " + this.filename)
-      src += compiled.code;
-      src += "\n;require('source-map-support').install();";
 
     } else { 
 

@@ -9,15 +9,18 @@
   "author": "Adam Avramov <fallenblood@gmail.com>",
   "license": "ISC",
   "dependencies": {
+    "cache-manager": "^0.18.0",
+    "chokidar": "^1.0.0-rc4",
+    "deasync": "0.0.10",
     "forever-monitor": "^1.5.2",
     "freeport": "^1.0.4",
-    "gaze": "^0.5.0",
     "glob": "^4.3.5",
     "long-stack-traces": "^0.1.2",
     "mori": "^0.3.2",
     "require-like": "^0.1.2",
     "sandboxed-module": "^2.0.0",
     "source-map-support": "^0.2.9",
+    "string-hash": "^1.1.0",
     "wisp": "git+https://github.com/egasimus/wisp.git"
   }
 }

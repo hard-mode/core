@@ -1,10 +1,10 @@
-var events      = require('events')         // events emitter
-  , fs          = require('fs')             // filesystem ops
-  , gaze        = require('gaze')           // watching files
-  , glob        = require('glob')           // glob for files
-  , path        = require('path')           // path operation
-  , util        = require('util')           // node utilities
-  , wisp        = require('wisp/compiler'); // lispy language
+var chokidar = require('chokidar')       // watching files
+  , events   = require('events')         // events emitter
+  , fs       = require('fs')             // filesystem ops
+  , glob     = require('glob')           // glob for files
+  , path     = require('path')           // path operation
+  , util     = require('util')           // node utilities
+  , wisp     = require('wisp/compiler'); // lispy language
 
 
 var Watcher = module.exports = function (options) {
@@ -19,12 +19,8 @@ var Watcher = module.exports = function (options) {
   this.modules = {};
 
   // start watcher
-  this.gaze = gaze(
-    [ path.join(__dirname, '**', '*') ],
-    function (err, watcher) {
-      if (err) throw err;
-      watcher.on('all', this.onWatcherEvent.bind(this));
-    }.bind(this));
+  this.watcher = chokidar.watch(path.join(__dirname, '**', '*'), {});
+  this.watcher.on('change', this.onChange.bind(this));
 
 };
 
@@ -34,49 +30,53 @@ util.inherits(Watcher, events.EventEmitter);
 
 Watcher.prototype.watch = function (pattern) {
 
-  console.log("Watching", pattern);
+  console.log("◉", pattern);
 
   process.nextTick(function () {
 
-    var files = glob.sync(pattern);
+    glob(pattern, function (err, files) {
 
-    if (!(files.length === 1 && files[0] === pattern)) {
-      files.map(function (filename) {
-        console.log("-", filename);
-        this.compileFile(filename);
-      }.bind(this));
-    }
+      if (err) throw err;
 
-    this.gaze.add(pattern);
+      if (!(files.length === 1 && files[0] === pattern)) {
+        files.map(function (filename) {
+          console.log("-", filename);
+          this.compileFile(filename);
+        }.bind(this));
+      }
+
+    });
+
+    this.watcher.add(pattern);
 
   }.bind(this));
 
 };
 
 
-Watcher.prototype.onWatcherEvent = function (event, filepath) {
+Watcher.prototype.onChange = function (filename, filestat) {
 
   // any changes to src dir of core module
   // trigger reload of watcher and session
-  if (path.dirname(filepath).indexOf(__dirname) === 0) {
-    this.emit('reload', filepath);
+  if (path.dirname(filename).indexOf(__dirname) === 0) {
+    this.emit('reload', filename);
   } else {
-    this.emit('update', filepath);
+    this.emit('update', filename);
   }
 
 };
 
 
-Watcher.prototype.compileFile = function (filepath) {
+Watcher.prototype.compileFile = function (filename) {
 
-  var handler = this.handlers[path.extname(filepath)];
+  var handler = this.handlers[path.extname(filename)];
 
   if (!handler) {
-    console.log("Don't know what to do with", filepath);
+    console.log("Don't know what to do with", filename);
     return;
   }
 
-  (handler.bind(this))(filepath);
+  (handler.bind(this))(filename);
 
 };
 
