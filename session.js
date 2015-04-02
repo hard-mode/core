@@ -36,7 +36,9 @@ var Session = function (options) {
   // execute session in sandbox
   var session = sandbox.require(
     options.sessionPath,
-    { sourceTransformers: { wisp: compileWisp
+    { requires: { 'midi':     require('midi')
+                , 'node-osc': require('node-osc') }
+    , sourceTransformers: { wisp: compileWisp
                           , hash: stripHashBang } }
   );
 
@@ -51,11 +53,13 @@ var Session = function (options) {
     // but don't add require-time compilation like `wisp.engine.node`
     // leaving it to this very sourceTransformer to handle compilation
 
+    var filename = this.filename;
+
     // the newline allows stripHashBang to work
     src = 'require.extensions[".wisp"]=true;\n';
 
     // 'this' is bound to the sandboxed module instance
-    if (path.extname(this.filename) === '.wisp') {
+    if (path.extname(filename) === '.wisp') {
 
       // compute hash value for file contents
       var hash = require('string-hash')(source)
@@ -66,21 +70,32 @@ var Session = function (options) {
       if (cached) {
         src += cached.item;
       } else {
+
         // compile and store in cache
         var compiled = wisp.compile(source);
-        if (!compiled) throw new Error("Could not compile " + this.filename)
+
+        if (compiled.error) throw new Error(
+          "compile error in " + filename + "\n" +
+          "  " + compiled.error + "\n");
+
+        if (!compiled) throw new Error(
+          "compiler returned nothing for " + filename);
+
         src += compiled.code;
         cache.set(key, compiled.code, 1000000, function (err) {
-          if (err) console.log("CACHERR", err);
+          if (err) console.log(
+            "error caching " + filename +
+            " under " + key, err);
+          console.log("cached " + filename + " under " + key);
         });
       }
 
       src += "\n;require('source-map-support').install();";
 
       // watch this file and keep track of its inclusion
-      if (included.indexOf(this.filename) === -1) {
-        included.push(this.filename);
-        watcher.watch(this.filename);
+      if (included.indexOf(filename) === -1) {
+        included.push(filename);
+        watcher.watch(filename);
       }
 
     } else { 
