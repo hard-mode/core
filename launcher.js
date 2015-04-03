@@ -13,22 +13,22 @@ var Launcher = module.exports.Launcher = function (srcPath) {
     console.log('Opening session', this.path);
   } else {
     this.path = '';
-    console.log('Starting new session.');
+    console.log('Starting empty session.');
   }
 
   // start session as separate process
   var taskPath = path.resolve(path.join(__dirname, 'session.js'))
-    , task =
-      { path:    taskPath
-      , monitor: new (require('forever-monitor').Monitor)
-        ( taskPath
-        , { watch: false
-          , env:
-            { SESSION:   this.path
-            , NODE_PATH: path.join(path.dirname(this.path), 'node_modules') + ':' +
-                         path.join(__dirname, 'node_modules')               + ':' +
-                         process.env['NODE_PATH'] } } ) };
-  task.monitor.start();
+    , nodePath = [ path.join(path.dirname(this.path), 'node_modules')
+                 , path.join(__dirname,               'node_modules')
+                 , process.env['NODE_PATH'] ].join(':');
+
+  new (require('forever-monitor').Monitor)( taskPath,
+    { watch:     false
+    , spawnWith: { customFds: [ process.stdin.fd
+                              , process.stdout.fd
+                              , process.stderr.fd ] }
+    , env:       { SESSION:   this.path
+                 , NODE_PATH: nodePath  } } ).start();
   
 };
 
