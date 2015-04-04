@@ -7,6 +7,7 @@ var caches  = require('cache-manager')    // caching engine
   , Watcher = require('./watcher')        // watch our code
   , wisp    = require('wisp/compiler');   // lispy language
 
+require('./winston.js');
 
 var Session = function (options) {
   
@@ -25,7 +26,6 @@ var Session = function (options) {
   });
 
   function reload () {
-    console.log();
     process.exit(64);
   }
 

@@ -6,6 +6,7 @@ var chokidar = require('chokidar')       // watching files
   , util     = require('util')           // node utilities
   , wisp     = require('wisp/compiler'); // lispy language
 
+require('./winston.js');
 
 var Watcher = module.exports = function (options) {
 

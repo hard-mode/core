@@ -1,19 +1,20 @@
-var path = require('path');  // path operation
-
+var path    = require('path')     // path operation
 
 // https://github.com/tlrobinson/long-stack-traces
 require('long-stack-traces');
 
+// setup logging
+require('./winston.js');
 
 var Launcher = module.exports.Launcher = function (srcPath) {
 
   // determine session path
   if (srcPath) {
     this.path = path.resolve(srcPath);
-    console.log('Opening session', this.path);
+    log('info', 'Opening session', this.path);
   } else {
     this.path = '';
-    console.log('Starting empty session.');
+    log('info', 'Starting empty session.');
   }
 
   // start session as separate process
@@ -24,9 +25,9 @@ var Launcher = module.exports.Launcher = function (srcPath) {
 
   new (require('forever-monitor').Monitor)( taskPath,
     { watch:     false
-    , spawnWith: { customFds: [ process.stdin.fd
-                              , process.stdout.fd
-                              , process.stderr.fd ] }
+    //, spawnWith: { customFds: [ process.stdin.fd
+                              //, process.stdout.fd
+                              //, process.stderr.fd ] }
     , env:       { SESSION:   this.path
                  , NODE_PATH: nodePath  } } ).start();
   
