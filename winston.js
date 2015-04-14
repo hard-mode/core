@@ -2,9 +2,9 @@ var path    = require('path')
   , winston = require('winston')
   , logPath = path.resolve(path.join(process.cwd(), 'hardmode.log.json'));
 
-winston.remove(winston.transports.Console);
+//winston.remove(winston.transports.Console);
 
-winston.add(winston.transports.File, { filename: logPath });
+//winston.add(winston.transports.File, { filename: logPath });
 
 GLOBAL.log = winston.log;
 

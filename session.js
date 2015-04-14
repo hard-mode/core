@@ -1,5 +1,5 @@
 var caches  = require('cache-manager')    // caching engine
-  , deasync = require('deasync')          // async wrappers
+  //, deasync = require('deasync')          // async wrappers
   , fs      = require('fs')               // filesystem ops
   , path    = require('path')             // path operation
   , sandbox = require('sandboxed-module') // module sandbox
@@ -31,13 +31,14 @@ var Session = function (options) {
 
   // start cache
   var cache = caches.caching({store: 'memory', max: 100, ttl: 100});
-  var get   = deasync(cache.get);
+  //var get   = deasync(cache.get);
 
   // execute session in sandbox
   var session = sandbox.require(
     options.sessionPath,
-    { requires: { 'midi':     require('midi')
-                , 'node-osc': require('node-osc') }
+    { requires: { 'midi':      require('midi')
+                , 'node-jack': require('node-jack')
+                , 'node-osc':  require('node-osc') }
     , sourceTransformers: { wisp: compileWisp
                           , hash: stripHashBang } }
   );
@@ -66,7 +67,7 @@ var Session = function (options) {
         , key  = "wisp:" + hash + ":" + source.length;
 
       // try to get cached compiler output
-      var cached = get.call(cache, key);
+      var cached = false; //get.call(cache, key);
       if (cached) {
         src += cached.item;
       } else {

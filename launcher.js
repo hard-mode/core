@@ -1,4 +1,5 @@
-var path    = require('path')     // path operation
+var child_process = require('child_process')
+  , path          = require('path');
 
 // https://github.com/tlrobinson/long-stack-traces
 require('long-stack-traces');
@@ -23,11 +24,16 @@ var Launcher = module.exports.Launcher = function (srcPath) {
                  , path.join(__dirname,               'node_modules')
                  , process.env['NODE_PATH'] ].join(':');
 
+  //child_process.spawn('node', [taskPath],
+    //{ stdio: 'inherit'
+    //, env:   { SESSION:   this.path
+             //, NODE_PATH: nodePath } });
+
   new (require('forever-monitor').Monitor)( taskPath,
     { watch:     false
-    //, spawnWith: { customFds: [ process.stdin.fd
-                              //, process.stdout.fd
-                              //, process.stderr.fd ] }
+    //, spawnWith: { customFds: [ process.stdin
+                              //, process.stdout
+                              //, process.stderr ] }
     , env:       { SESSION:   this.path
                  , NODE_PATH: nodePath  } } ).start();
   
