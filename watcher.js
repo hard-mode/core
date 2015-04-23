@@ -19,7 +19,10 @@ var Watcher = module.exports = function (options) {
   this.modules = {};
 
   // start watcher
-  this.watcher = chokidar.watch(path.join(__dirname, '**', '*'), {});
+  this.watcher = chokidar.watch(
+    path.join(__dirname, '**', '*'),
+    { persistent: false 
+    , ignored: /[\/\\]\./ });
   this.watcher.on('change', this.onChange.bind(this));
 
 };
@@ -51,6 +54,8 @@ Watcher.prototype.watch = function (pattern) {
 
 
 Watcher.prototype.onChange = function (filename, filestat) {
+
+  console.log("!!! change", filename, filestat);
 
   // any changes to src dir of core module
   // trigger reload of watcher and session

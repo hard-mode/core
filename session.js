@@ -14,6 +14,7 @@ require('./winston.js');
 var Session = function (options) {
 
   var session = this;
+
   
   var included = [options.sessionPath]
     // to keep track of files used on the server side
@@ -27,7 +28,9 @@ var Session = function (options) {
   this.persist = {}
 
   function start () {
-    return sandbox.require(
+    console.log("starting session", options.sessionPath);
+    included = [options.sessionPath];
+    return sandbox.load(
       options.sessionPath,
       { requires: { 'midi':      require('midi')
                   , 'node-jack': require('node-jack')
@@ -38,7 +41,9 @@ var Session = function (options) {
                   , 'session':   session }
       , sourceTransformers: { wisp: compileWisp
                             , hash: stripHashBang } }
-    );
+    ).module.exports;
+    console.log(Object.keys(watcher.watcher._watched));
+    //console.log(watcher);
   };
 
   var app = start();
@@ -46,27 +51,33 @@ var Session = function (options) {
   // run watcher, compiling assets
   // any time the session code changes, end this process
   // and allow launcher to restart it with the new code
-  watcher.watch(options.sessionPath);
-  watcher.on('reload', reload);
-  watcher.on('update', function (filePath) {
-    console.log('updated', filePath);
-    if (included.indexOf(filePath) !== -1) reload();
+  //watcher.watch(options.sessionPath);
+  watcher.on('reload', function () {
+    console.log("exiting and reloading\n");
+    killChildren();
+    process.exit();
   });
 
-  function clearTimers () {
-    for (var i = 0; i < session.persist.timers.length; i++) {
-      var t = session.persist.timers.shift();
-      qtimers.clearTimeout(t.timeout); 
-      console.log(t.timeout);
-      (t.stop || t.cancel)();
-    }
-  }
+  function killChildren () {};
 
-  function reload () {
+  function onUpdate (filePath) {
+    console.log("\n", included);
+    console.log(Object.keys(watcher.watcher._watched));
+    console.log('updated', filePath);
     clearTimers();
     if (app.stop) app.stop();
     app = start();
   };
+
+  watcher.on('update', onUpdate);
+
+  function clearTimers () {
+    for (var i = 0; i < session.persist.timers.length; i++) {
+      var t = session.persist.timers.shift();
+      qtimers.clearTimeout(t.timeout);
+      (t.stop || t.cancel)(); // TODO make this work instead
+    }
+  }
 
   function stripHashBang (source) {
     // if the first line of a source file starts with #!,
@@ -92,10 +103,13 @@ var Session = function (options) {
         , key  = "wisp:" + hash + ":" + source.length;
 
       // try to get cached compiler output
-      var cached = false; //get.call(cache, key);
+      //var cached = get.call(cache, key);
+      var cached = false;
       if (cached) {
+        console.log("cache hit", key)
         src += cached.item;
       } else {
+        //console.log("cache miss", key)
 
         // compile and store in cache
         var compiled = wisp.compile(source);
@@ -112,7 +126,7 @@ var Session = function (options) {
           if (err) console.log(
             "error caching " + filename +
             " under " + key, err);
-          console.log("cached " + filename + " under " + key);
+          //console.log("cache set " + filename + " under " + key);
         });
       }
 
@@ -121,8 +135,9 @@ var Session = function (options) {
       // watch this file and keep track of its inclusion
       if (included.indexOf(filename) === -1) {
         included.push(filename);
-        watcher.watch(filename);
       }
+
+      watcher.watch(filename);
 
     } else { 
 
