@@ -13,7 +13,6 @@ var Watcher = module.exports = function (options) {
   // file type handlers
   this.handlers =
     { '.js':   this.compileScripts
-    , '.jade': this.compileScripts
     , '.wisp': this.compileSession };
 
   // modules used in session

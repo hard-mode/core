@@ -8,7 +8,7 @@ var path    = require('path')
 
 GLOBAL.log = winston.log;
 
-GLOBAL.info = console.log =
+GLOBAL.info = //console.log =
   function () { winston.info.call(winston, arguments) };
 
 //process.stdout.pipe({ write: function (msg, enc) { winston.info(message); } });

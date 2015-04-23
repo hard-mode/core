@@ -31,9 +31,7 @@ var Launcher = module.exports.Launcher = function (srcPath) {
 
   new (require('forever-monitor').Monitor)( taskPath,
     { watch:     false
-    //, spawnWith: { customFds: [ process.stdin
-                              //, process.stdout
-                              //, process.stderr ] }
+    //, spawnWith: { stdio: "inherit" }
     , env:       { SESSION:   this.path
                  , NODE_PATH: nodePath  } } ).start();
   

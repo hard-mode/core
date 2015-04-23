@@ -2,7 +2,9 @@ var caches  = require('cache-manager')    // caching engine
   //, deasync = require('deasync')          // async wrappers
   , fs      = require('fs')               // filesystem ops
   , path    = require('path')             // path operation
+  , qtimers = require('qtimers')          // better timers
   , sandbox = require('sandboxed-module') // module sandbox
+  , spawn   = require('child_process').spawn
   , vm      = require('vm')               // eval isolation
   , Watcher = require('./watcher')        // watch our code
   , wisp    = require('wisp/compiler');   // lispy language
@@ -10,38 +12,61 @@ var caches  = require('cache-manager')    // caching engine
 require('./winston.js');
 
 var Session = function (options) {
+
+  var session = this;
   
-  // keep track of files used on the server side
-  // changes to those would trigger full reloads
-  var included = [options.sessionPath];
+  var included = [options.sessionPath]
+    // to keep track of files used on the server side
+    // changes to those would trigger full reloads
+    , cache = caches.caching({store: 'memory', max: 100, ttl: 100})
+    // will attempt to checksum and cache any unchanged
+    // files so they're not recompiled every time
+    , watcher = new Watcher(options);
+    // reload on changes to source code.
+
+  this.persist = {}
+
+  function start () {
+    return sandbox.require(
+      options.sessionPath,
+      { requires: { 'midi':      require('midi')
+                  , 'node-jack': require('node-jack')
+                  , 'node-osc':  require('node-osc') 
+                  , 'tingodb':   require('tingodb') }
+      , globals:  { 'stdin':     process.stdin
+                  , 'stdout':    process.stdout
+                  , 'session':   session }
+      , sourceTransformers: { wisp: compileWisp
+                            , hash: stripHashBang } }
+    );
+  };
+
+  var app = start();
 
   // run watcher, compiling assets
   // any time the session code changes, end this process
   // and allow launcher to restart it with the new code
-  var watcher = new Watcher(options);
   watcher.watch(options.sessionPath);
   watcher.on('reload', reload);
   watcher.on('update', function (filePath) {
+    console.log('updated', filePath);
     if (included.indexOf(filePath) !== -1) reload();
   });
 
-  function reload () {
-    process.exit(64);
+  function clearTimers () {
+    for (var i = 0; i < session.persist.timers.length; i++) {
+      var t = session.persist.timers.shift();
+      qtimers.clearTimeout(t.timeout); 
+      console.log(t.timeout);
+      (t.stop || t.cancel)();
+    }
   }
 
-  // start cache
-  var cache = caches.caching({store: 'memory', max: 100, ttl: 100});
-  //var get   = deasync(cache.get);
-
-  // execute session in sandbox
-  var session = sandbox.require(
-    options.sessionPath,
-    { requires: { 'midi':      require('midi')
-                , 'node-jack': require('node-jack')
-                , 'node-osc':  require('node-osc') }
-    , sourceTransformers: { wisp: compileWisp
-                          , hash: stripHashBang } }
-  );
+  function reload () {
+    clearTimers();
+    if (app.stop) app.stop();
+    app = start();
+  };
 
   function stripHashBang (source) {
     // if the first line of a source file starts with #!,
