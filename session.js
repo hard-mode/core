@@ -32,7 +32,8 @@ var Session = function (options) {
     included = [options.sessionPath];
     return sandbox.load(
       options.sessionPath,
-      { requires: { 'jack-sanity': require('jack-sanity')
+      { requires: { 'dbus-native': require('dbus-native')
+                  , 'jack-sanity': require('jack-sanity')
                   , 'midi':        require('midi')
                   //, 'node-jack':   require('node-jack')
                   , 'node-osc':    require('node-osc') 
