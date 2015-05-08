@@ -32,13 +32,14 @@ var Session = function (options) {
     included = [options.sessionPath];
     return sandbox.load(
       options.sessionPath,
-      { requires: { 'midi':      require('midi')
-                  , 'node-jack': require('node-jack')
-                  , 'node-osc':  require('node-osc') 
-                  , 'tingodb':   require('tingodb') }
-      , globals:  { 'stdin':     process.stdin
-                  , 'stdout':    process.stdout
-                  , 'session':   session }
+      { requires: { 'jack-sanity': require('jack-sanity')
+                  , 'midi':        require('midi')
+                  //, 'node-jack':   require('node-jack')
+                  , 'node-osc':    require('node-osc') 
+                  , 'tingodb':     require('tingodb') }
+      , globals:  { 'stdin':   process.stdin
+                  , 'stdout':  process.stdout
+                  , 'session': session }
       , sourceTransformers: { wisp: compileWisp
                             , hash: stripHashBang } }
     ).module.exports;

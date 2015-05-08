@@ -15,8 +15,9 @@
     "forever-monitor": "^1.5.2",
     "freeport": "^1.0.4",
     "glob": "^4.3.5",
+    "jack-sanity": "^0.4.0",
     "long-stack-traces": "^0.1.2",
-    "midi": "^0.9.2",
+    "midi": "hard-mode/node-midi#f5d43b4e4",
     "monitorctrlc": "^1.0.0",
     "mori": "^0.3.2",
     "node-jack": "hard-mode/node-jack#a234cf785",
@@ -27,7 +28,6 @@
     "source-map-support": "^0.2.9",
     "string-hash": "^1.1.0",
     "tingodb": "^0.3.4",
-    "winston": "^0.9.0",
-    "wisp": "git+https://github.com/egasimus/wisp.git"
+    "wisp": "egasimus/wisp"
   }
 }
